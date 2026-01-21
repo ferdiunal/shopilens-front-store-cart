@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shopilens Store Cart
 
-## Getting Started
+Bu proje, **Shopilens** e-ticaret platformunun sepet ve ödeme işlemlerini yöneten **Micro-Frontend** servisidir. Next.js 16 altyapısı üzerine kurulmuş olup, modern web teknolojilerini ve güvenlik standartlarını destekler.
 
-First, run the development server:
+## 🛠 Teknoloji Yığını
+
+- **Framework**: Next.js 16.1.4 (React 19)
+- **State Management**: Redux Toolkit
+- **Styling**: TailwindCSS v4, Radix UI
+- **Authentication**: NextAuth.js v4, Auth0
+- **Internationalization**: next-intl
+- **Containerization**: Docker (Multi-stage build)
+
+## 🚀 Kurulum ve Çalıştırma
+
+Projeyi yerel ortamda çalıştırmak için aşağıdaki adımları izleyin:
+
+### Gerekli Bağımlılıklar
+- Node.js 20+
+- npm veya yarn
+
+### Kurulum
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Bağımlılıkları yükleyin
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Geliştirme Modu
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Projeyi geliştirme modunda başlatın
+npm run dev
+# Uygulama http://localhost:3001 adresinde çalışacaktır (varsayılan)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Production Build
 
-## Learn More
+```bash
+npm run build
+PORT=3001 npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 🐳 Docker Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Proje, multi-stage Docker build yapısına sahiptir. Bu sayede image boyutu optimize edilmiştir.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Docker image oluşturma
+docker build -t shopilens-store-cart .
 
-## Deploy on Vercel
+# Docker container başlatma (3001 portunda)
+docker run -p 3001:3001 shopilens-store-cart
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+> **Not:** Dockerfile içerisinde `EXPOSE 3001` ve `ENV PORT 3001` ayarları bulunmaktadır. Production ortamında port 3001 üzerinden hizmet verir.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🔑 Çevresel Değişkenler (.env)
+
+Projenin kök dizininde `.env` dosyası oluşturun. `.env.example` dosyasını referans alabilirsiniz.
+
+### Temel Konfigürasyon
+| Değişken | Açıklama |
+|----------|----------|
+| `NEXT_PUBLIC_APP_URL` | Uygulamanın çalışacağı ana URL (örn: https://your-domain.com) |
+| `NEXT_PUBLIC_API_URL` | Backend API adresi (örn: https://fakestoreapi.com) |
+
+### Auth0 Entegrasyonu
+Auth0 entegrasyonu için gerekli anahtarlar. `Regular Web App` tipinde bir uygulama oluşturulmalıdır.
+
+| Değişken | Açıklama |
+|----------|----------|
+| `AUTH0_SECRET` | Session şifreleme anahtarı (`openssl rand -hex 32` ile oluşturulabilir) |
+| `AUTH0_BASE_URL` | Uygulamanın base URL'i (Development: http://localhost:3001) |
+| `AUTH0_ISSUER_BASE_URL` | Auth0 Tenant Domain (örn: https://dev-xyz.us.auth0.com) |
+| `AUTH0_CLIENT_ID` | Auth0 Application Client ID |
+| `AUTH0_CLIENT_SECRET` | Auth0 Application Client Secret |
+
+### NextAuth Konfigürasyonu
+| Değişken | Açıklama |
+|----------|----------|
+| `NEXTAUTH_URL` | NextAuth için canonical URL (Genellikle `AUTH0_BASE_URL` ile aynı) |
+| `NEXTAUTH_SECRET` | NextAuth güvenlik anahtarı (`openssl rand -base64 32`) |
+
+### Diğer Servisler
+- `NEXT_PUBLIC_GTM_ID`: Google Tag Manager ID
+- `NEXT_PUBLIC_GA_ID`: Google Analytics ID
+- `NEXT_PUBLIC_ENABLE_CART`: Sepet özelliğini açıp kapatmak için Feature Flag
+
+## 🔐 Auth0 Entegrasyonu Detayları
+
+Proje, kimlik doğrulama için **NextAuth.js** ile **Auth0 Provider** kullanmaktadır. İlgili konfigürasyon `lib/auth/auth.ts` dosyasında yer alır.
+
+### Yapılandırma Adımları:
+
+1.  **Auth0 Dashboard**: Bir "Regular Web App" oluşturun.
+2.  **callback URLs**: "Allowed Callback URLs" alanına aşağıdaki adresleri ekleyin:
+    *   `http://localhost:3001/api/auth/callback/auth0` (Local)
+    *   `https://your-production-domain.com/api/auth/callback/auth0` (Production)
+3.  **Logout URLs**: "Allowed Logout URLs" alanına:
+    *   `http://localhost:3001`
+    *   `https://your-production-domain.com`
+4.  **Credentials**: Client ID, Client Secret ve Domain bilgilerini `.env` dosyasına ekleyin.
+
+`lib/auth/auth.ts` dosyası, ortam değişkenlerini kontrol eder ve eğer Auth0 bilgileri mevcutsa Auth0 Provider'ı aktif eder. Aksi takdirde Google veya Credentials provider'ları fallback olarak çalışabilir (konfigüre edilmişse).
+
+## 🌍 Multi-Zone & Rewrites
+
+Bu proje, ana uygulama (`shopilens-store`) ile entegre çalışacak şekilde tasarlanmıştır. `next.config.ts` dosyasında, belirli path'ler veya statik dosyalar için yönlendirmeler (rewrites) tanımlanmış olabilir.
+
+```typescript
+// Örnek rewrite kuralı
+{
+  source: '/:lang',
+  destination: 'http://localhost:3001/:lang',
+}
+```
+Bu kurallar, Micro-Frontend mimarisinde path routing'in doğru çalışmasını sağlar.
