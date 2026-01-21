@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   experimental: {
     globalNotFound: true,
   },
+  // Multi-zone için gerekli:
+  // Statik dosyaları mutlak URL ile sunarak ana uygulamanın proxy yapmasına gerek bırakmaz.
+  assetPrefix: process.env.NEXT_PUBLIC_APP_URL || undefined,
 
   // Image Optimization configuration
   images: {
